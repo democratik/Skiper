@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Video Skipper",
+  "version": "1.0",
+  "description": "Press Shift + S to skip the ad in the player",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "all_frames": true
+    }
+  ]
+}
