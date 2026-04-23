@@ -3,6 +3,8 @@
   "name": "Video Skipper",
   "version": "1.0",
   "description": "Press Shift + S to skip the ad in the player",
+  "permissions": ["storage"],
+  "action": { "default_popup": "popup.html" },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

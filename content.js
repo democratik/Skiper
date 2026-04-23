@@ -1,3 +1,18 @@
+let currentSkipKey = "KeyS";
+
+chrome.storage.sync.get(["skipKey"], (result) => {
+  if (result.skipKey) {
+    currentSkipKey = result.skipKey;
+  }
+});
+
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.skipKey) {
+    currentSkipKey = changes.skipKey.newValue;
+  }
+});
+
+// Massage style
 function showToast(message, isError = false) {
   const toast = document.createElement("div");
   toast.innerText = message;
@@ -32,7 +47,7 @@ function showToast(message, isError = false) {
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.shiftKey && event.code === "KeyS") {
+  if (event.shiftKey && event.code === currentSkipKey) {
     const videos = document.querySelectorAll("video");
     let isSkiped = false;
 
@@ -42,14 +57,14 @@ document.addEventListener("keydown", (event) => {
     }
 
     videos.forEach((video) => {
-      if (!isNaN(video.duration)) {
+      if (!isNaN(video.duration) && video.duration > 0) {
         video.currentTime = video.duration;
         isSkiped = true;
       }
     });
 
     if (isSkiped) {
-      showToast("Video Skiped");
+      showToast(`Video Skipped)`);
     } else {
       showToast("Error: Duration unavailable", true);
     }
