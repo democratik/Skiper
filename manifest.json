@@ -1,9 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Video Skipper",
+  "name": "Skipper",
   "version": "1.0",
   "description": "Press Shift + S to skip the ad in the player",
   "permissions": ["storage"],
+  "icons": {
+    "16": "img/logo/SkiperLogo128.png",
+    "48": "img/logo/SkiperLogo128.png",
+    "128": "img/logo/SkiperLogo128.png"
+  },
   "action": { "default_popup": "popup.html" },
   "content_scripts": [
     {
