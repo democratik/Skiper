@@ -23,7 +23,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
 
   chrome.storage.sync.set({ skipKey: keyCode }, () => {
     const status = document.getElementById("status");
-    status.innerText = "Збережено!";
+    status.innerText = "Saved!";
     setTimeout(() => {
       status.innerText = "";
     }, 1500);
