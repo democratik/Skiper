@@ -1,14 +1,24 @@
 let currentSkipKey = "KeyS";
 
-chrome.storage.sync.get(["skipKey"], (result) => {
+chrome.storage.sync.get(["skipKey", "popupBlockEnabled"], (result) => {
   if (result.skipKey) {
     currentSkipKey = result.skipKey;
   }
+
+  const popupBlockEnabled =
+    typeof result.popupBlockEnabled === "boolean" ? result.popupBlockEnabled : true;
+  document.documentElement.dataset.skipperPopupBlock = String(popupBlockEnabled);
+  setOverlayProtection(popupBlockEnabled);
 });
 
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.skipKey) {
     currentSkipKey = changes.skipKey.newValue;
+  }
+
+  if (changes.popupBlockEnabled) {
+    document.documentElement.dataset.skipperPopupBlock = String(changes.popupBlockEnabled.newValue);
+    setOverlayProtection(changes.popupBlockEnabled.newValue);
   }
 });
 
@@ -46,6 +56,116 @@ function showToast(message, isError = false) {
   }, 2000);
 }
 
+// --- Click-hijack overlay neutralizer ---
+// Some ad scripts place an invisible, fully-clickable layer (an <a> or a div
+// with an onclick) directly on top of the <video>, so any click meant for the
+// player (play/pause, seek) instead opens a new tab / redirects the page.
+// We find elements that cover a video almost entirely, carry no visible
+// content, and are click-trapped, then make them click-through so the click
+// reaches the real player underneath instead of the hijack layer.
+
+function rectsOverlapMostly(videoRect, elRect) {
+  const xOverlap =
+    Math.max(0, Math.min(videoRect.right, elRect.right) - Math.max(videoRect.left, elRect.left));
+  const yOverlap =
+    Math.max(0, Math.min(videoRect.bottom, elRect.bottom) - Math.max(videoRect.top, elRect.top));
+  const videoArea = (videoRect.right - videoRect.left) * (videoRect.bottom - videoRect.top);
+  return videoArea > 0 && (xOverlap * yOverlap) / videoArea > 0.8;
+}
+
+function looksInvisible(el) {
+  const style = window.getComputedStyle(el);
+  const hasVisibleBg =
+    style.backgroundImage !== "none" ||
+    !/rgba?\(0,\s*0,\s*0,\s*0\)|transparent/.test(style.backgroundColor);
+  const hasText = el.innerText && el.innerText.trim().length > 0;
+  const hasVisualChild = el.querySelector("img, svg, canvas");
+  return !hasVisibleBg && !hasText && !hasVisualChild;
+}
+
+function isClickTrap(el, style) {
+  return el.tagName === "A" || el.hasAttribute("onclick") || style.cursor === "pointer";
+}
+
+function findHijackOverlays() {
+  const suspects = [];
+
+  document.querySelectorAll("video").forEach((video) => {
+    const videoRect = video.getBoundingClientRect();
+    if (videoRect.width === 0 || videoRect.height === 0) return;
+
+    document.querySelectorAll("a, div, span").forEach((el) => {
+      if (el === video || el.contains(video) || el.dataset.skipperNeutralized) return;
+
+      const style = window.getComputedStyle(el);
+      if (style.position !== "absolute" && style.position !== "fixed") return;
+      if (style.pointerEvents === "none") return;
+      if (!isClickTrap(el, style)) return;
+
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      if (!rectsOverlapMostly(videoRect, rect)) return;
+      if (!looksInvisible(el)) return;
+
+      suspects.push(el);
+    });
+  });
+
+  return suspects;
+}
+
+function neutralizeOverlays() {
+  findHijackOverlays().forEach((el) => {
+    el.style.pointerEvents = "none";
+    el.dataset.skipperNeutralized = "true";
+  });
+}
+
+let neutralizeTimer = null;
+function scheduleNeutralize() {
+  clearTimeout(neutralizeTimer);
+  neutralizeTimer = setTimeout(neutralizeOverlays, 300);
+}
+
+let overlayObserver = null;
+let overlayInterval = null;
+
+function startOverlayProtection() {
+  if (overlayObserver) return;
+
+  neutralizeOverlays();
+  overlayObserver = new MutationObserver(scheduleNeutralize);
+  overlayObserver.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["style", "class"],
+  });
+  overlayInterval = setInterval(neutralizeOverlays, 2000);
+}
+
+function stopOverlayProtection() {
+  clearTimeout(neutralizeTimer);
+
+  if (overlayObserver) {
+    overlayObserver.disconnect();
+    overlayObserver = null;
+  }
+
+  if (overlayInterval) {
+    clearInterval(overlayInterval);
+    overlayInterval = null;
+  }
+}
+
+function setOverlayProtection(enabled) {
+  if (enabled) {
+    startOverlayProtection();
+  } else {
+    stopOverlayProtection();
+  }
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.shiftKey && event.code === currentSkipKey) {
     const videos = document.querySelectorAll("video");
@@ -66,7 +186,7 @@ document.addEventListener("keydown", (event) => {
     if (isSkiped) {
       showToast(`Video Skipped`);
     } else {
-      showToast("Error: Duration unavailable", true);
+      showToast("Error: The video should play", true);
     }
   }
 });

@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  chrome.storage.sync.get(["skipKey"], (result) => {
+  chrome.storage.sync.get(["skipKey", "popupBlockEnabled"], (result) => {
     if (result.skipKey) {
       document.getElementById("shortcutKey").value = result.skipKey.replace(
         "Key",
@@ -8,7 +8,14 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       document.getElementById("shortcutKey").value = "S";
     }
+
+    document.getElementById("popupBlockToggle").checked =
+      typeof result.popupBlockEnabled === "boolean" ? result.popupBlockEnabled : true;
   });
+});
+
+document.getElementById("popupBlockToggle").addEventListener("change", (event) => {
+  chrome.storage.sync.set({ popupBlockEnabled: event.target.checked });
 });
 
 document.getElementById("saveBtn").addEventListener("click", () => {
