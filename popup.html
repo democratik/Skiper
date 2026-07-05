@@ -70,15 +70,6 @@
       input:checked + .slider:before {
         transform: translateX(16px);
       }
-      input {
-        width: 40px;
-        text-align: center;
-        font-size: 14px;
-        padding: 5px;
-        text-transform: uppercase;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-      }
       button {
         width: 100%;
         padding: 8px;
@@ -93,6 +84,17 @@
       button:hover {
         background: #f1f3f4;
       }
+      .shortcut-btn {
+        width: auto;
+        min-width: 100px;
+        padding: 6px 10px;
+        font-size: 13px;
+      }
+      .shortcut-btn.recording {
+        background: #fff3cd;
+        border-color: #ffcc00;
+        color: #856404;
+      }
       #status {
         color: #1a73e8;
         font-size: 12px;
@@ -105,15 +107,15 @@
   <body>
     <h3>Skipper Settings</h3>
     <p style="font-size: 12px; color: #666; margin: 0">
-      Shortcut: Shift + <span style="color: red">Key</span>
+      Click the button, then press your new shortcut
     </p>
 
     <div class="shortcut-container">
-      <label style="font-size: 14px">Your key:</label>
-      <input type="text" id="shortcutKey" maxlength="1" placeholder="S" />
+      <label style="font-size: 14px">Skip shortcut:</label>
+      <button type="button" id="shortcutRecorder" class="shortcut-btn">
+        Shift + S
+      </button>
     </div>
-
-    <button id="saveBtn">Save</button>
     <div id="status"></div>
 
     <div class="toggle-container">

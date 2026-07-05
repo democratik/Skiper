@@ -1,8 +1,26 @@
-let currentSkipKey = "KeyS";
+const DEFAULT_SHORTCUT = {
+  ctrlKey: false,
+  altKey: false,
+  shiftKey: true,
+  metaKey: false,
+  code: "KeyS",
+};
 
-chrome.storage.sync.get(["skipKey", "popupBlockEnabled"], (result) => {
-  if (result.skipKey) {
-    currentSkipKey = result.skipKey;
+let currentShortcut = DEFAULT_SHORTCUT;
+
+function matchesShortcut(event, shortcut) {
+  return (
+    event.code === shortcut.code &&
+    event.ctrlKey === shortcut.ctrlKey &&
+    event.altKey === shortcut.altKey &&
+    event.shiftKey === shortcut.shiftKey &&
+    event.metaKey === shortcut.metaKey
+  );
+}
+
+chrome.storage.sync.get(["skipShortcut", "popupBlockEnabled"], (result) => {
+  if (result.skipShortcut) {
+    currentShortcut = result.skipShortcut;
   }
 
   const popupBlockEnabled =
@@ -12,8 +30,8 @@ chrome.storage.sync.get(["skipKey", "popupBlockEnabled"], (result) => {
 });
 
 chrome.storage.onChanged.addListener((changes) => {
-  if (changes.skipKey) {
-    currentSkipKey = changes.skipKey.newValue;
+  if (changes.skipShortcut) {
+    currentShortcut = changes.skipShortcut.newValue;
   }
 
   if (changes.popupBlockEnabled) {
@@ -167,7 +185,7 @@ function setOverlayProtection(enabled) {
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.shiftKey && event.code === currentSkipKey) {
+  if (matchesShortcut(event, currentShortcut)) {
     const videos = document.querySelectorAll("video");
     let isSkiped = false;
 
