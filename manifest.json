@@ -13,7 +13,10 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "{740f9756-d5fe-4336-b13f-52343ccf86c3}",
-      "strict_min_version": "128.0"
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "content_scripts": [
